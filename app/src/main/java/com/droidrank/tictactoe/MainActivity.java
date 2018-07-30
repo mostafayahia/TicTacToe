@@ -13,13 +13,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView mResultTextView;
 
     private static final int EMPTY = -1;
+
+    private static final int NUM_OF_PLAYERS = 2;
     private static final int PLAYER_1 = 0;
     private static final int PLAYER_2 = 1;
 
     // we make N * N grid
     private static final int N = 3;
 
-    private int[][] mGrid = new int[N][N];
+    private int[][] mGrid;
 
     private int mCurrentPlayer;
 
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mGrid = new int[N][N];
 
         Button block1 = (Button) findViewById(R.id.bt_block1);
         Button block2 = (Button) findViewById(R.id.bt_block2);
@@ -52,7 +55,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             button.setOnClickListener(this);
 
         init();
-        mIsGameOn = false;
 
 
         /**
@@ -63,16 +65,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void onClick(View view) {
 
                 if (!mIsGameOn) {
-                    init();
-                    mIsGameOn = true;
-                    mCurrentPlayer = PLAYER_1;
-                    mRestartButton.setText(R.string.restart_game);
+                    restartGame();
                 }
 
 
             }
         });
 
+    }
+
+    private void restartGame() {
+        init();
+        mIsGameOn = true;
+        mCurrentPlayer = PLAYER_1;
+        mRestartButton.setText(R.string.restart_game);
     }
 
     private void init() {
@@ -90,6 +96,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mResultTextView.setText("");
 
         mCurrentPlayer = EMPTY;
+
+        mIsGameOn = false;
     }
 
     @Override
@@ -130,6 +138,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void processPressedBlock(int blockNo) {
         if (!mIsGameOn) return;
+
+        Position2D position2D = getBlockPosition2D(blockNo);
+        int i = position2D.i;
+        int j = position2D.j;
+
+        if (mGrid[i][j] != EMPTY) return;
+
         String symbol;
         switch (mCurrentPlayer) {
             case PLAYER_1:
@@ -145,19 +160,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         // blockNo isn't zero-based counting
         mBlocks[blockNo-1].setText(symbol);
 
-        Position2D position2D = getBlockPosition2D(blockNo);
-        int i = position2D.i;
-        int j = position2D.j;
-
         mGrid[i][j] = mCurrentPlayer;
 
-        checkVerticalAndHorizontal(i, j);
-        if (i == j)
-            checkDiagonal1();
-        else if (i == N - j - 1)
-            checkDiagonal2();
+        boolean isWin = false; // default  value
 
-        if (!mIsGameOn) {
+        if (isWinHorizontal(i, j) || isWinVertical(i, j))
+            isWin = true;
+        else if (i == j && isWinDiagonal1(i, j))
+            isWin = true;
+        else if (i == N - j - 1 && isWinDiagonal2(i, j))
+            isWin = true;
+
+        if (isWin) {
+            mIsGameOn = false;
             mRestartButton.setText(R.string.start_new_game);
             String message;
             switch (mCurrentPlayer) {
@@ -175,7 +190,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mIsGameOn = false;
             mResultTextView.setText(R.string.draw);
         } else {
-            mCurrentPlayer = (mCurrentPlayer + 1) % 2;
+            mCurrentPlayer = (mCurrentPlayer + 1) % NUM_OF_PLAYERS;
         }
     }
 
@@ -200,82 +215,69 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return position;
     }
 
-    /**
-     * check the diagonal starts from (0, 0) to (N-1, N-1)
-     */
-    private void checkDiagonal1() {
-        int player = mGrid[0][0];
-        boolean isPlayerWin = true;
-        for (int i = 0; i < N; i++) {
-            if (mGrid[i][i] != player) {
-                isPlayerWin = false;
-                break;
-            }
-        }
-
-        if (isPlayerWin) {
-            mIsGameOn = false;
-        }
-
-    }
-
-    /**
-     * check the diagonal starts from (0, N-1) to (N-1, 0)
-     */
-    private void checkDiagonal2() {
-        int player = mGrid[0][N - 1];
-        boolean isPlayerWin = true;
-        for (int i = 0; i < N; i++) {
-            if (mGrid[i][N - i - 1] != player) {
-                isPlayerWin = false;
-                break;
-            }
-        }
-
-        if (isPlayerWin) {
-            mIsGameOn = false;
-        }
-    }
 
 
-    /**
-     * check horizontal and vertical rows of the last played entry
-     *
-     * @param i
-     * @param j
-     */
-    private void checkVerticalAndHorizontal(int i, int j) {
+    private boolean isWinVertical(int i, int j) {
         int player = mGrid[i][j];
 
-        boolean isPlayerWin = true;
         for (int ii = 0; ii < N; ii++) {
-            if (mGrid[(i + ii) % N][j] != player) {
-                isPlayerWin = false;
-                break;
+            if (mGrid[ii][j] != player) {
+                return false;
             }
         }
 
-        if (isPlayerWin) {
-            mIsGameOn = false;
-            return;
-        }
-
-        isPlayerWin = true;
-        for (int jj = 0; jj < N; jj++) {
-            if (mGrid[i][(j + jj) % N] != player) {
-                isPlayerWin = false;
-                break;
-            }
-        }
-
-        if (isPlayerWin) {
-            mIsGameOn = false;
-        }
+        return true;
     }
 
-    class Position2D {
+    private boolean isWinHorizontal(int i, int j) {
+        int player = mGrid[i][j];
+
+        for (int jj = 0; jj < N; jj++) {
+            if (mGrid[i][jj] != player) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * check the diagonal starts from the element (0, 0) to (N-1, N-1)
+     * @param i
+     * @param j
+     * @return
+     */
+    private boolean isWinDiagonal1(int i, int j) {
+        int player = mGrid[i][j];
+        for (int ii = 0; ii < N; ii++) {
+            if (mGrid[ii][ii] != player) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * check the diagonal starts from the element (0, N-1) to (N-1, 0)
+     * @param i
+     * @param j
+     * @return
+     */
+    private boolean isWinDiagonal2(int i, int j) {
+        int player = mGrid[i][j];
+
+        for (int ii = 0; ii < N; ii++) {
+            if (mGrid[ii][N - ii - 1] != player) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private class Position2D {
         // by default has invalid positions
-        int i = -1;
-        int j = -1;
+        private int i = -1;
+        private int j = -1;
     }
 }
