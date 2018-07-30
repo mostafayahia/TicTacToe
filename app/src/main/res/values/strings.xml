@@ -13,7 +13,8 @@
 
     <string name="restart_button_text_initially">Start New Game</string>
     <string name="restart_button_text_in_middle_of_game">Restart Game</string>
-
+    <string name="restart_game">Restart Game</string>
+    <string name="start_new_game">Start New Game</string>
 
 
 </resources>
