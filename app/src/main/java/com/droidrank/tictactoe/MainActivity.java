@@ -1,5 +1,8 @@
 package com.droidrank.tictactoe;
 
+import android.content.DialogInterface;
+import android.os.Build;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -64,7 +67,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onClick(View view) {
 
-                if (!mIsGameOn) {
+                if (mIsGameOn) {
+                    // the next code is taken from https://stackoverflow.com/questions/2115758/how-do-i-display-an-alert-dialog-on-android
+                    AlertDialog.Builder builder;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        builder = new AlertDialog.Builder(MainActivity.this, android.R.style.Theme_Material_Dialog_Alert);
+                    } else {
+                        builder = new AlertDialog.Builder(MainActivity.this);
+                    }
+                    builder.setTitle(R.string.app_name)
+                            .setMessage(R.string.restart_message)
+                            .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    restartGame();
+                                }
+                            })
+                            .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int which) {
+                                    // do nothing
+                                }
+                            })
+                            .show();
+                } else {
                     restartGame();
                 }
 
