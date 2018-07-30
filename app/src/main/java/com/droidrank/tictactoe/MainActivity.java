@@ -212,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             mResultTextView.setText(message);
         } else if (isGridFull()) {
             mIsGameOn = false;
+            mRestartButton.setText(R.string.start_new_game);
             mResultTextView.setText(R.string.draw);
         } else {
             mCurrentPlayer = (mCurrentPlayer + 1) % NUM_OF_PLAYERS;
